@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Especialistas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght=300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <a href="index.html" style="text-decoration: none; color: inherit;">
+                    <h3 class="color-acento" style="margin: 0;">Clínica Movimientos</h3>
+                </a>
+            </div>
+            <nav>
+                <a href="index.html">← Volver al Inicio</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container" style="padding: 40px 20px; min-height: 70vh;">
+        
+        <div id="login-box" style="max-width: 400px; margin: 60px auto; padding: 30px; background: #fff; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center;">
+            <h2 style="margin-bottom: 20px; color: var(--dark, #333);">Acceso Restringido</h2>
+            <p style="font-size: 14px; color: #666; margin-bottom: 20px;">Introduce la contraseña de administrador para gestionar al equipo médico.</p>
+            
+            <div class="form-group" style="margin-bottom: 20px; text-align: left;">
+                <label for="pass">Contraseña:</label>
+                <input type="password" id="pass" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" placeholder="••••••••">
+            </div>
+            
+            <button onclick="verificar()" class="btn btn-primary" style="border:none; width:100%; cursor:pointer; padding: 12px;">Ingresar al Panel</button>
+        </div>
+
+        <div id="admin-panel" style="display: none;">
+            <section id="crud-fisioterapeutas" class="section">
+                <div class="section-header">
+                    <h2 class="section-title">EQUIPO MÉDICO</h2>
+                    <p>Gestión Interna de Fisioterapeutas</p>
+                </div>
+                
+                <div class="crud-superior">
+                    <div class="crud-form-box">
+                        <form id="form-fisioterapeuta">
+                            <div class="form-group">
+                                <label>Nombre del especialista:</label>
+                                <input type="text" id="nombre-fisio" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Especialidad médica:</label>
+                                <input type="text" id="esp-fisio" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Turno:</label>
+                                <select class="crud-select" id="turno-fisio">
+                                    <option>Matutino</option>
+                                    <option>Vespertino</option>
+                                    <option>Completo</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Número de Cédula:</label>
+                                <input type="text" id="cedula-fisio" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Costo de Sesión:</label>
+                                <input type="text" id="costo-fisio" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="border:none; width:150px; cursor:pointer; margin-top:10px;">Registrar</button>
+                        </form>
+                    </div>
+
+                    <div class="crud-img-box">
+                        <h3>Vista Previa</h3>
+                        <div class="img-preview-placeholder">
+                            <img src="fisioterapeuta.png" alt="Icono de registro" style="height: 60px; margin-bottom: 10px;">
+                            <p id="preview-text">Nombre del Terapeuta<br>Especialidad<br>Turno Asignado<br>Cédula Profesional</p>
+                            <strong class="color-acento" id="preview-costo">$450.00</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="crud-inferior" style="margin-top: 40px;">
+                    <h3 style="margin-bottom: 15px; color: #333;">ESPECIALISTAS ACTIVOS</h3>
+                    <div class="table-responsive">
+                        <table class="crud-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Especialista</th>
+                                    <th>Especialidad</th>
+                                    <th>Costo Base</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-fisioterapeutas-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container" style="text-align: center; padding: 20px 0;">
+            <p>&copy; 2026 Panel de Administración Privado.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Apunta a tu api.php corregido para MySQL
+        const API_URL = 'api.php'; 
+        const formulario = document.getElementById('form-fisioterapeuta');
+        const cuerpoTabla = document.getElementById('tabla-fisioterapeutas-body');
+
+        // Función para validar la clave "admin123"
+        function verificar() {
+            const clave = document.getElementById('pass').value;
+            if (clave === "admin123") {
+                document.getElementById('login-box').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
+                cargarFisioterapeutas(); // Trae los datos de la BD al entrar
+            } else {
+                alert("Contraseña incorrecta. Inténtalo de nuevo.");
+            }
+        }
+
+        // Permitir dar Enter en el campo de contraseña para ingresar
+        document.getElementById('pass').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') verificar();
+        });
+
+        // Cargar especialistas desde MySQL usando la API
+        async function cargarFisioterapeutas() {
+            try {
+                const respuesta = await fetch(API_URL);
+                if (!respuesta.ok) return; 
+                
+                const especialistas = await respuesta.json();
+                cuerpoTabla.innerHTML = ''; 
+                
+                if (especialistas.length > 0) {
+                    especialistas.forEach((fisio, index) => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${String(index + 1).padStart(2, '0')}</td>
+                            <td><strong>${fisio.nombre}</strong></td>
+                            <td>${fisio.especialidad}</td>
+                            <td>$${fisio.costo}</td>
+                            <td>
+                                <button class="btn-crud-action btn-edit" style="background:#ffc107; color:#000; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Editar</button>
+                                <button class="btn-crud-action btn-delete" style="background:#dc3545; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;" onclick="eliminarFisioterapeuta('${fisio.id}')">Eliminar</button>
+                            </td>
+                        `;
+                        cuerpoTabla.appendChild(tr);
+                    });
+                } else {
+                    cuerpoTabla.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay especialistas registrados.</td></tr>';
+                }
+            } catch (err) {
+                console.log("Error al conectar con la API:", err);
+            }
+        }
+
+        // Enviar nuevo especialista a la base de datos
+        formulario.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const nuevoFisioterapeuta = {
+                nombre: document.getElementById('nombre-fisio').value,
+                especialidad: document.getElementById('esp-fisio').value,
+                turno: document.getElementById('turno-fisio').value,
+                cedula: document.getElementById('cedula-fisio').value,
+                costo: document.getElementById('costo-fisio').value
+            };
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(nuevoFisioterapeuta)
+                });
+
+                if (res.ok) {
+                    formulario.reset();
+                    cargarFisioterapeutas();
+                } else {
+                    alert("Error al registrar en la base de datos.");
+                }
+            } catch (err) {
+                alert("Error al conectar con el servidor.");
+            }
+        });
+
+        // Eliminar especialista de MySQL
+        async function eliminarFisioterapeuta(id) {
+            if (confirm('¿Deseas dar de baja a este especialista?')) {
+                try {
+                    const res = await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        cargarFisioterapeutas();
+                    } else {
+                        alert("No se pudo eliminar al especialista.");
+                    }
+                } catch (err) {
+                    console.error("Error al eliminar:", err);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
